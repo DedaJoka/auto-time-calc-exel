@@ -16,6 +16,12 @@ def sum_time(time_list):
         if re.match(r'^\d+:\d{2}$', time_str):
             minutes, seconds = map(int, time_str.split(':'))
             total_time += timedelta(minutes=minutes, seconds=seconds)
+        if re.match(r'^\d+(,\d{2})?$', time_str):
+            time_parts = time_str.split(',')
+            seconds = int(time_parts[0])
+            fraction = int(time_parts[1]) if len(time_parts) > 1 else 0
+            total_seconds = seconds + fraction/100
+            total_time += timedelta(seconds=total_seconds)
 
     return total_time
 
@@ -29,6 +35,12 @@ def convert_to_minutes_seconds(time_delta):
     total_seconds = total_seconds % 60
 
     return int(total_minutes), int(total_seconds)
+
+def convert_to_seconds(time_delta):
+    # Получаем общее количество секунд
+    total_seconds = time_delta.total_seconds()
+
+    return total_seconds
 
 
 def browse_file():
@@ -69,7 +81,7 @@ def on_workbook_menu_select(file_path, selected_workbook):
     entry1.pack(side=tk.LEFT, padx=10)
 
     confirm_button = tk.Button(frame2, text="Подсчитать",
-                               command=lambda: confirm(file_path, selected_workbook, entry1, result1, result2))
+                               command=lambda: confirm(file_path, selected_workbook, entry1, result1, result2, result3))
     confirm_button.pack(side=tk.LEFT)
 
     frame_result1 = tk.Frame(root)
@@ -90,11 +102,21 @@ def on_workbook_menu_select(file_path, selected_workbook):
     result2 = tk.Entry(frame_result2, width=10)
     result2.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
 
+    frame_result3 = tk.Frame(root)
+    frame_result3.pack(fill=tk.BOTH, pady=5)
+    buttons.append(frame_result3)
 
-def confirm(file_path, sheet_name, entry1, result1, result2):
+    result_label3 = tk.Label(frame_result3, text=f"количество секунд:")
+    result_label3.pack(side=tk.LEFT, padx=(10, 0))
+    result3 = tk.Entry(frame_result3, width=10)
+    result3.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
+
+
+def confirm(file_path, sheet_name, entry1, result1, result2, result3):
     column = entry1.get()
     result1.delete(0, tk.END)  # Очищаем поле result1
     result2.delete(0, tk.END)  # Очищаем поле result2
+    result3.delete(0, tk.END)  # Очищаем поле result3
     try:
         workbook = load_workbook(filename=file_path)
         sheet = workbook[sheet_name]
@@ -109,6 +131,9 @@ def confirm(file_path, sheet_name, entry1, result1, result2):
 
         total_minutes, total_seconds = convert_to_minutes_seconds(total_time)
         result2.insert(0, f'{total_minutes}:{total_seconds}')  # Вставляем в поле result2
+
+        total_seconds = convert_to_seconds(total_time)
+        result3.insert(0, total_seconds)  # Вставляем в поле result2
 
     except Exception as e:
         print(f"Произошла ошибка при чтении файла: {e}")
